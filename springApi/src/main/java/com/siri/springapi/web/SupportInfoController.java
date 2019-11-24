@@ -8,7 +8,6 @@ import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -16,8 +15,12 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
-import com.siri.springapi.domain.PostsRepository;
-import com.siri.springapi.dto.PostsSaveRequestDto;
+import com.siri.springapi.domain.SupportInfo;
+import com.siri.springapi.domain.SupportInfoRepository;
+import com.siri.springapi.domain.SupportRegRepository;
+import com.siri.springapi.dto.CsvReqDto;
+import com.siri.springapi.dto.SupportReqDto;
+import com.siri.springapi.service.SupportInfoService;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -26,18 +29,20 @@ import lombok.Setter;
 
 @RestController
 @AllArgsConstructor
-public class WebRestController {
+public class SupportInfoController {
 
-    private PostsRepository postsRepository;
-   	private static final String SAMPLE_CSV_FILE_PATH = "C:/git/springApi/csv/테스트1.csv";
+    private SupportInfoService supportInfoService;
+    private SupportInfoRepository supportInfoRepository;
+    private SupportRegRepository supportRegRepository;
+   	private static final String SAMPLE_CSV_FILE_PATH = "C:/git/springApi/csv/사전과제1.csv";
 
 
-    @GetMapping("/hello")
+    @GetMapping("/s/hello")
     public String hello() {
         return "HelloWorld";
     }
     
-    @GetMapping("/hello/json")
+    @GetMapping("/s/hello/json")
     @ResponseBody
     public Hello helloJson() {
     	Hello hello = new Hello();
@@ -45,39 +50,40 @@ public class WebRestController {
         return hello;
     }
 
-    @PostMapping("/posts")
-    public void savePosts(@RequestBody PostsSaveRequestDto dto){
-        postsRepository.save(dto.toEntity());
-    }
-    
-    @PostMapping("/save")
-    public List<PostsSaveRequestDto> save() throws UnsupportedEncodingException, FileNotFoundException{
+    @PostMapping("/s/save")
+    public void save() throws UnsupportedEncodingException, FileNotFoundException{
     	  
     	
-    	CSVReader reader = new CSVReaderBuilder(new InputStreamReader(new FileInputStream(SAMPLE_CSV_FILE_PATH), "EUC-KR"))
+    	CSVReader reader = new CSVReaderBuilder(new InputStreamReader(new FileInputStream(SAMPLE_CSV_FILE_PATH), "utf-8"))
                   .withSkipLines(1)
                   .build();	
     	  
-    	  CsvToBean<PostsSaveRequestDto> csvToBean = new CsvToBeanBuilder(reader)
-                  .withType(PostsSaveRequestDto.class)
+    	  CsvToBean<CsvReqDto> csvToBean = new CsvToBeanBuilder(reader)
+                  .withType(CsvReqDto.class)
                   .withIgnoreLeadingWhiteSpace(true)
                   .build();
 
        // Reads all CSV contents into memory (Not suitable for large CSV files)
-          List<PostsSaveRequestDto> dtos = csvToBean.parse();
+          List<CsvReqDto> dtos = csvToBean.parse();
      
-          for(PostsSaveRequestDto dto: dtos) {
+          for(CsvReqDto dto: dtos) {
         
         	  System.out.println("==========================");
-        	  System.out.println("저자 : " + dto.getAuthor());
-              System.out.println("이름 : " + dto.getContent());
-              System.out.println("제목 : " + dto.getTitle());
+        	  System.out.println("지자체명 : " + dto.getRegion());
+              System.out.println("지원대상 : " + dto.getTarget());
+              System.out.println("용도 : " + dto.getUsage());
               System.out.println("==========================");        	  
         	  
-        	  postsRepository.save(dto.toEntity());
+              
+              supportRegRepository.save(dto.toSupportRegEntity());
+              supportInfoRepository.save(dto.toSupportInfoEntity());
+             // supportInfoService.saveReg(dto.toSupportRegEntity());
+              
+            //  supportInfoService.saveInfo(dto.toSupportInfoEntity());
+
         	  
           }
-		return dtos; 
+		//return supportInfoRepository.findAll(); 
           
     
        /* Connection conn = null;
